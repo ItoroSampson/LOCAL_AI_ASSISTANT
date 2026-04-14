@@ -24,9 +24,21 @@ def robust_inference(prompt, max_retries=3):
             
             response = client.chat.completions.create(
                 model="llama3.2:1b",
-                messages=[
-                    {"role": "system", "content": "Return ONLY valid JSON. No chatter. No stutter"},
-                    {"role": "user", "content": prompt}
+                messages=[{
+        "role": "system", 
+        "content": (
+            "You are a machine that only outputs JSON. Do not talk. "
+            "Use ONLY these keys: \"topic\", \"summary\", \"complexity_score\". "
+            "Example: {\"topic\": \"5G\", \"summary\": \"Fast data\", \"complexity_score\": 8}"
+        )
+    },
+    {
+        "role": "user", 
+        "content": "Analyze '5G in Cloud AI'. Output only the JSON object."
+    }
+                    
+   
+
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.7 # Slight heat to get a different result on retry
