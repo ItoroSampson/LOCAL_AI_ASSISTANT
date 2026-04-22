@@ -1,0 +1,45 @@
+Model,Category,TTFT,TPS,TRL,RAM_Delta_GB,Output
+llama3.2:1b,Reasoning,19.25,8.95,25.62,0.97,"To find out how many sisters Itoro has, we need to..."
+llama3.2:1b,Reasoning,3.065,10.68,12.15,-0.01,"To solve for X, we need to isolate the variable X ..."
+llama3.2:1b,Reasoning,3.399,10.57,19.2,-0.03,"To solve this problem, we need to understand the r..."
+llama3.2:1b,Extraction,3.305,10.7,3.87,0.02,Cloud computing offers remote access....
+llama3.2:1b,Extraction,3.434,10.09,34.64,-0.03,Here's an example of how you can return a JSON obj...
+llama3.2:1b,Extraction,3.142,9.3,4.65,0.01,"The email address in the given text is ""sampson@ex..."
+llama3.2:1b,Creative,3.106,10.75,9.62,-0.0,"In the heart of Akwa Ibom State, a lone robot name..."
+llama3.2:1b,Creative,2.897,10.28,27.61,-0.01,"So, you know how we can talk to each other and sha..."
+llama3.2:1b,Creative,2.95,10.67,17.48,-0.01,"Here are a few options:
+
+* ""Cloud AI Engineer | Ex..."
+llama3.2:1b,Creative,3.0,10.56,22.88,0.0,Here is an example of a polite email asking for a ...
+phi4-mini:latest,Reasoning,16.477,4.95,117.24,2.39,Itoro's siblings consist of his three brothers. Si...
+phi4-mini:latest,Reasoning,4.266,5.23,21.1,-0.12,"To solve the equation, follow these steps:
+
+1. Sub..."
+phi4-mini:latest,Reasoning,6.397,5.07,88.3,-0.32,The answer is still 1 minute. Each machine makes o...
+phi4-mini:latest,Extraction,5.409,5.31,6.73,0.01,On-Demand Internet Storage Power....
+phi4-mini:latest,Extraction,5.423,5.2,17.91,0.03,"```json
+
+{
+
+  ""status"": true,
+
+  ""message"": ""Syste..."
+phi4-mini:latest,Extraction,4.553,5.31,7.19,0.02,"The extracted email from this text is ""sampson@exa..."
+phi4-mini:latest,Creative,4.527,5.06,14.8,-1.31,"In the bustling town of Uyo, Nigeria's largest cit..."
+phi4-mini:latest,Creative,3.837,5.1,35.23,0.06,Hey there! Imagine you have an invisible helper wh...
+phi4-mini:latest,Creative,4.195,4.79,9.0,0.03,"""Cloud-AI Specialist | Innovative Solutions Archit..."
+phi4-mini:latest,Creative,4.82,5.13,49.03,-0.02,Subject: Follow-Up on Job Application - [Your Full...
+mistral,Reasoning,25.031,3.08,74.37,1.23," Let's break this down:
+
+1. We know that Itoro has..."
+mistral,Reasoning,6.229,3.15,51.93,0.07," To solve the equation for X, you need to isolate ..."
+mistral,Reasoning,10.048,3.19,41.39,0.02, Given that 5 machines can produce 5 widgets in 5 ...
+mistral,Extraction,8.402,3.23,12.12,0.0," On-demand internet-based data storage, processing..."
+mistral,Extraction,8.005,3.2,13.64,0.07," {
+ ""status"": true,
+ ""message"": ""System check succ..."
+mistral,Extraction,6.609,3.14,12.02,0.0, The email address in the given text is 'sampson@e...
+mistral,Creative,6.852,3.16,36.01,0.03," In Akwa Ibom's lush greenery, R2X-9 found solace...."
+mistral,Creative,5.636,3.19,48.63,-0.1," Alright, let's imagine you have a big toy box fil..."
+mistral,Creative,5.518,3.22,15.13,0.0," ""Cloud AI Engineer: Leveraging cutting-edge techn..."
+mistral,Creative,5.302,3.04,87.27,-0.01, Subject: Follow-up Regarding Job Application - [Y...
