@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 5s # High frequency for benchmarking accuracy
+
+scrape_configs:
+  - job_name: 'ollama'
+    static_configs:
+      - targets: ['ollama-exporter:9400']
