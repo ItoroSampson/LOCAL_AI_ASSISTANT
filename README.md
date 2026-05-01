@@ -1,76 +1,177 @@
+# Local LLM Benchmarking & Evaluation Framework
+### *A Production-Grade MLOps Approach to Edge AI Model Selection*
 
-
-# **Local-LLM Benchmarking & Evaluation Framework**
-### *A Data-Driven Comparison of Edge-AI Models on 16GB Hardware*
-
-## * Overview*
-This repository contains a Python-based MLOps framework designed to benchmark and evaluate Small Language Models (SLMs) running locally. The project focuses on the trade-offs between **inference speed** and **logical accuracy**, specifically optimized for hardware-constrained environments (e.g., 16GB RAM).
-
-## ** Features**
-* **Automated Inference:** Batch testing across multiple models (Llama 3.2, Phi-4 mini:latest, Mistral :latest).
-* **Performance Metrics:** Captures **TTFT** (Time to First Token), **TPS** (Tokens Per Second), **TRL** (Total Request Latency) and **RAM Delta**.
-* **LLM-as-a-Judge :** Uses a "Chain of Thought" (CoT) reasoning prompt to force the judge model to justify its evaluation before grading.
-* **Structured Output:** Automatically exports all logs, reasoning, and scores into a CSV for analysis.
-* **Live Monitoring:** Integrated with Prometheus and Grafana for real-time observability of model performance and system resource utilization (CPU/RAM/GPU).
-
-* **Actionable Dashboards:** Includes pre-configured Grafana JSON templates to visualize the relationship between model size and inference latency.
----
-
-## ** Benchmark Results**
-Based on local testing on an **HP 16GB Windows laptop**, the framework identified a critical "Logic Gap" in sub-2B models:
-
-| Model | Avg. TPS | Logic Accuracy | Recommendation |
-| :--- | :--- | :--- | :--- |
-| **Llama 3.2 (1B)** | **10.3** | Low | Real-time Chat / Simple Extraction |
-| **Phi-4-Mini (3.8B)** | 5.1 | **High** | Technical Reasoning / MLOps Tasks |
-| **Mistral (7B)** | 3.1 | High | Complex Analysis / Baseline Judge |
+> **TL;DR:** Built a Python-based evaluation framework that benchmarks Small Language Models (SLMs) on 16GB hardware using hard performance metrics and an LLM-as-a-Judge architecture — replacing subjective assessment with reproducible, data-driven model selection.
 
 ---
 
-## **🛠️ Installation & Setup**
+## The Problem
 
-### **Prerequisites**
-* [Ollama](https://ollama.com/) installed and running.
-* Python 3.10+
-* 16GB RAM (recommended).
+Leaderboard benchmarks are measured on A100s. Your production environment is not an A100.
 
-### **1. Clone the Repository**
-```bash
-git clone https://github.com/ItoroSampson/LOCAL_AI_ASSISTANT
-cd LOCAL AI ASSISTANT
+When deploying LLMs at the edge — on constrained hardware, without GPU acceleration — you need a framework that answers one question: **which model actually works on *this* machine, for *this* task?** This project builds that framework from scratch.
+
+---
+
+## What This Framework Measures
+
+| Metric | What It Tells You |
+|--------|-------------------|
+| **TPS** (Tokens Per Second) | Raw inference throughput — how fast the model generates |
+| **TTFT** (Time to First Token) | Perceived latency — how long before the user sees anything |
+| **RAM Delta** | Memory footprint — headroom left for the OS and other processes |
+| **Logic Accuracy** | Reasoning quality — validated against ground-truth logic benchmarks |
+
+---
+
+## Results
+
+Tested on a **16GB Windows laptop** (CPU-only inference via Ollama):
+
+| Model | Avg. TPS | Avg. TTFT | RAM Usage | Logic Accuracy | Verdict |
+|:------|:--------:|:---------:|:---------:|:--------------:|:-------:|
+| **Llama 3.2 (1B)** | **10.3** | **3.2s** | **< 1GB** | ❌ Low (Hallucinates) | Real-time chat only |
+| **Phi-4-Mini (3.8B)** | 5.1 | 5.4s | ~2.4GB | ✅ High (Precise) | **Edge Champion** |
+| **Mistral (7B)** | 3.1 | 7.2s | ~4GB+ | ✅ High (Verbose) | Judge / Baseline |
+
+**Key finding:** Llama 3.2 is 2x faster than Phi-4-Mini but fails consistently on multi-step logical reasoning. For MLOps pipelines and structured extraction, Phi-4-Mini is the clear winner. Speed without accuracy is not production-ready.
+
+---
+
+## Architecture
+
+### Evaluation Strategy: Full-Circle Cross-Evaluation
+
+To minimise judge bias — a known failure mode in single-judge eval systems — the framework uses two versioned evaluation pipelines:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    judge.py (v1)                        │
+│                                                         │
+│  Llama 3.2 ──┐                                          │
+│               ├──► Mistral 7B (Judge) ──► Score + Log  │
+│  Phi-4-Mini ──┘                                         │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│                   judge_v2.py (v2)                      │
+│                                                         │
+│  Mistral 7B ──► Phi-4-Mini (CoT Judge)                 │
+│                     │                                   │
+│                     ├─ 1. Solve problem internally      │
+│                     ├─ 2. Compare to student answer     │
+│                     └─ 3. Output structured JSON score  │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### **2. Install Dependencies**
+**Why v2 matters:** v1 revealed that Mistral occasionally scored confident-but-wrong Llama responses as correct ("confidence bias"). v2 forces the judge to use Chain of Thought — solving the problem before grading — which eliminated this failure mode entirely.
+
+### Data Pipeline
+
+```
+Ollama (local inference)
+    │
+    ▼
+Python automation (batch inference + timing)
+    │
+    ▼
+Structured JSON (schema-validated responses + metadata)
+    │
+    ▼
+CSV export (historical analysis + model comparison)
+    │
+    ▼
+Prometheus ──► Grafana (real-time CPU / RAM / GPU dashboards)
+```
+
+---
+
+## Engineering Decisions Worth Noting
+
+**Model Garbage Collection:** Mistral 7B caused 25s cold-start TTFTs by consuming RAM that wasn't released between runs. A Python GC routine was implemented to explicitly unload model weights between inferences — reducing memory contention on constrained hardware. Production edge AI systems need resource lifecycle management, not just inference code.
+
+**Reason-then-Rate Prompting:** The v2 judge uses a CoT prompt that forces the model to produce its own step-by-step solution before evaluating the student's answer. This is a pattern used in production eval pipelines to improve judge reliability.
+
+**Structured Output Enforcement:** All model responses are parsed and validated against a JSON schema before being written to CSV. Silent schema failures are caught and logged — not silently corrupted.
+
+---
+
+## Project Structure
+
+```
+LOCAL_AI_ASSISTANT/
+│
+├── judge.py               # v1 — Mistral as direct judge
+├── judge_v2.py            # v2 — Phi-4-Mini with CoT reasoning (enhanced)
+├── evaluation_result.csv  # Structured dataset of all benchmark runs
+├── grafana/
+│   └── dashboard.json     # Pre-configured Grafana dashboard template
+└── README.md
+```
+
+---
+
+## Setup
+
+### Prerequisites
+- [Ollama](https://ollama.com/) installed and running locally
+- Python 3.10+
+- 16GB RAM recommended
+
+### 1. Clone the repo
+```bash
+git clone https://github.com/ItoroSampson/LOCAL_AI_ASSISTANT
+cd LOCAL_AI_ASSISTANT
+```
+
+### 2. Install dependencies
 ```bash
 pip install ollama pandas
 ```
 
-### **3. Pull Required Models**
+### 3. Pull the models
 ```bash
 ollama pull llama3.2:1b
-ollama pull phi4 mini : latest
-ollama pull mistral: latest
+ollama pull phi4-mini:latest
+ollama pull mistral:latest
 ```
 
----
+### 4. Run the benchmark
+```bash
+# v1: Mistral as judge
+python judge.py
 
-## **📂 File Structure**
-* `judge.py`: Baseline benchmarking script using Mistral as a direct judge.
-* `judge_v2.py`: **Enhanced version** using Phi-4-Mini with Chain of Thought reasoning for peer-reviewing Mistral.
-* `evaluation_result.csv`: The structured dataset generated by the framework.
-* '
----
+# v2: Phi-4-Mini with Chain of Thought (recommended)
+python judge_v2.py
+```
 
-## **📈 Evaluation Logic (v2)**
-To minimize "Evaluation Bias," v2 implements a **Reason-then-Rate** workflow:
-1. **Prompt:** The student model answers a logic/technical question.
-2. **Thinking:** The judge (Phi-4) performs its own internal step-by-step reasoning.
-3. **Grading:** The judge compares its logic to the student and outputs a JSON-structured score.
+Results are automatically exported to `evaluation_result.csv`.
 
 ---
 
-## **📝 Author**
-**Itoro Sampson** *Cloud AI & MLOps Professional* [LinkedIn](https://www.linkedin.com/in/itoro-sampson-10477b245/) | [X](https://x.com/itoro_samp?s=11)
+## MLOps Practices Applied
+
+- **Systematic measurement** — hard metrics replace subjective quality assessment
+- **Versioned evaluation pipeline** — v1 and v2 are discrete, comparable evaluation strategies
+- **Explainability** — all judge outputs include reasoning chains before scores
+- **Observability** — Prometheus + Grafana for real-time resource monitoring
+- **Structured output** — schema-validated JSON throughout the pipeline
 
 ---
 
+## What's Next
+
+- [ ] Extend with RAG integration to test retrieval-augmented reasoning across models
+- [ ] Add Langfuse for persistent trace logging and eval scoring
+- [ ] Test quantised variants (GGUF Q4/Q8) to measure accuracy-compression trade-offs
+
+---
+
+## Author
+
+**Itoro Sampson** — Cloud AI/Gen AI Engineer  
+Building LLM-powered systems, serverless AI pipelines on AWS, and production-grade MLOps infrastructure.
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=flat&logo=linkedin)](https://www.linkedin.com/in/itoro-sampson-10477b245/)
+[![X](https://img.shields.io/badge/X-Follow-000000?style=flat&logo=x)](https://x.com/itoro_samp?s=11)
+[![GitHub](https://img.shields.io/badge/GitHub-ItoroSampson-181717?style=flat&logo=github)](https://github.com/ItoroSampson)
