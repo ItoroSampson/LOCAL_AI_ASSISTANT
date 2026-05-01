@@ -5,3 +5,6 @@ scrape_configs:
   - job_name: 'ollama'
     static_configs:
       - targets: ['ollama-exporter:9400']
+  - job_name: 'python-judge'
+    static_configs:
+      - targets: ['host.docker.internal:8001']
